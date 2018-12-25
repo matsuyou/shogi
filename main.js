@@ -8,9 +8,10 @@ var numstand = [];
 var captble = [];              //持ち駒リスト
 
 var status = 0;      //0:通常　1:駒の選択状態
-var turn = 1;     //1:先手　-1:後手
+var turn;     //1:player1　-1:player2
 var sbx,sby;     //選択状態の駒のbx,by
 var ssx,ssy;     //選択状態の駒のs,sy
+var winner;   //1:player1勝利　-1:player2勝利
 
 var font_color = ["black","maroon","lime"];    //文字の色
 var out_color = "olive";   //背景の色
@@ -119,7 +120,9 @@ function init() {
              [0,0,0,0,0,0,0,0,0,0]];
     numstand = [[0,0,0,0,0,0,0,0,0,0],        //持ち駒(格納位置:駒id、値:個数)
                 [0,0,0,0,0,0,0,0,0,0]];
-    turn = 1;
+    turn = Math.floor(Math.random ()*2)*2 -1;   //手番をランダムで決定
+
+    winner = 0;
     draw_all();     //画面全体を描画
 }
 
@@ -155,13 +158,31 @@ function draw_all(){
             id = stand[0][stand_w*sy+sx];
             id2 = stand[1][stand_w*sy+sx];
             draw_stand(sx,sy,id2,-1,0);
+
+            if(id==1 || id==2) winner=1;  //勝敗判定
+            if(id2==1 || id2==2) winner=-1;
         }
     }
+
+    if(winner == 1){
+        ctx.fillStyle = "red";    //手番の表示
+        ctx.fillText("勝利",psize/2,total_h*psize-12);
+        ctx.fillStyle = "black";    //手番の表示
+        ctx.fillText("敗北",psize/2,psize);
+        turn = 0;
+    }else if(winner == -1){
+        ctx.fillStyle = "red";    //手番の表示
+        ctx.fillText("勝利",psize/2,psize);
+        ctx.fillStyle = "black";    //手番の表示
+        ctx.fillText("敗北",psize/2,total_h*psize-12);
+        turn = 0;
+    }
+
     ctx.fillStyle = "black";    //手番の表示
     if(turn==1){
-        ctx.fillText("先手番",psize/2,total_h*psize-12);
+        ctx.fillText("手番",psize/2,total_h*psize-12);
     }else if(turn==-1){
-        ctx.fillText("後手番",psize/2,psize);
+        ctx.fillText("手番",psize/2,psize);
     }
 }
 //盤内を描画
@@ -340,9 +361,26 @@ function setfrom(sx,sy){
     }
     if(id==0) return;
     status=2;
-    draw_stand(sx,sy,id,turn,1);
-    for(by=0; by<board_h; by++){  //置ける場所探索
-        for(bx=0; bx<board_w; bx++){
+    draw_stand(sx,sy,id,turn,1);   //置く駒の色変更
+    for(bx=0; bx<board_w; bx++){  //置ける場所探索
+        if(id==9){        //歩の場合
+            pawn = 0;
+            for(by=0; by<board_h; by++){
+                if(board[by][bx]==9 && member[by][bx]==turn){
+                    pawn += 1;
+                    break;
+                }
+            }
+            if(pawn > 0) continue;    //二歩禁止
+        }
+        for(by=0; by<board_h; by++){
+            if(turn==1){
+                if(id==9 && by==0) continue;   //端に歩置けない
+                if(id==7 && by<2) continue;    //端に桂置けない
+            }else if(turn==-1){
+                if(id==9 && by==board_h-1) continue;   //端に歩置けない
+                if(id==7 && board_h-3<by) continue;    //端に桂置けない
+            }
             if(board[by][bx]==0){
                 draw_board(bx,by,0,0,2);   //盤の色変更
                 movable[by][bx] = 1;

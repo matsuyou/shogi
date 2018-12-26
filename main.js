@@ -7,6 +7,7 @@ var stand = [];                //持ち駒(種類と位置)リスト
 var numstand = [];
 var captble = [];              //持ち駒リスト
 
+var mode = 0;      //0:初期 1:対戦
 var status = 0;      //0:通常　1:駒の選択状態
 var turn;     //1:player1　-1:player2
 var sbx,sby;     //選択状態の駒のbx,by
@@ -17,7 +18,7 @@ var font_color = ["black","maroon","lime"];    //文字の色
 var out_color = "olive";   //背景の色
 var board_color = ["Khaki","darkkhaki","steelblue"];  //盤面の色
 var line_color = ["darkslategray" ,"darkslategray" ,"darkslategray"];   //線の色
-var stand_color = ["peru","firebrick"];  //駒台の色
+var stand_color = ["peru","sienna"];  //駒台の色
 var width = 400;   //画面の横幅
 var height = 640;   //画面の縦幅
 
@@ -25,8 +26,8 @@ var psize = 32;           //1マスのピクセル数
 var total_w = 11, total_h = 19;    //画面全体のマス数
 var board_w = 9, board_h = 9;    //将棋盤のサイズ
 var mw = (total_w-board_w)/2,   mh = (total_h-board_h)/2;  //将棋盤周りの余白マス数
-var stand_w = 5, stand_h = 2;    //駒台のサイズ
-var msw = 1, msh = 2;     //駒台周りの余白
+var stand_w = 9, stand_h = 1;    //駒台のサイズ
+var msw = 1, msh = 4;     //駒台周りの余白
 
 var nametbl = [
     "","王","玉","飛","角","金","銀","桂","香","歩",
@@ -64,25 +65,7 @@ var change = [0,0,0,10,11,0,12,13,14,15,-3,-4,-6,-7,-8,-9];  //成リスト
 
 //初期化処理
 function init() {
-    canvas = document.getElementById("world");
-    canvas.width = width;
-    canvas.height = height;
-    ctx = canvas.getContext('2d');
-    ctx.font = " 24px 'ＭＳ ゴシック'";
-
-    var touch=false;
-    if(navigator.userAgent.indexOf('iPhone') > 0    //使用デバイス判定
-        || navigator.userAgent.indexOf('iPod') > 0
-        || navigator.userAgent.indexOf('iPad') > 0
-        || navigator.userAgent.indexOf('Android') > 0) {
-         touch=true;
-    }
-    if(touch==true){
-        document.addEventListener("touchstart", touchstart);  //タッチした瞬間に処理
-    }else{
-        document.addEventListener("mousedown", mousedown);   //マウス押した瞬間に処理
-    }
-
+    ctx.font = " 24px 'ＭＳ ゴシック'"
     board = [               //盤の初期配置
         [8,7,6,5,2,5,6,7,8],
         [0,3,0,0,0,0,0,4,0],
@@ -127,10 +110,44 @@ function init() {
 }
 
 /////////////////////////////////////描画処理/////////////////////////////////////////
+//トップ画面描画
+function draw_top(){
+    status = 100;
+    canvas = document.getElementById("world");
+    canvas.width = width;
+    canvas.height = height;
+    ctx = canvas.getContext('2d');
+
+    var touch=false;
+    if(navigator.userAgent.indexOf('iPhone') > 0    //使用デバイス判定
+        || navigator.userAgent.indexOf('iPod') > 0
+        || navigator.userAgent.indexOf('iPad') > 0
+        || navigator.userAgent.indexOf('Android') > 0) {
+         touch=true;
+    }
+    if(touch==true){
+        document.addEventListener("touchstart", touchstart);  //タッチした瞬間に処理
+    }else{
+        document.addEventListener("mousedown", mousedown);   //マウス押した瞬間に処理
+    }
+
+    draw_out();  //背景描画
+    ctx.font = "italic bold 50px 'HG正楷書体-PRO'";
+    ctx.fillStyle = font_color[0];
+    ctx.fillText("ほぼ将棋", mw*psize, mh*psize);
+    ctx.fillStyle = "midnightblue";
+    ctx.fillRect(width/2, height/2, psize*4, psize*1);  //枠内
+    ctx.font = " 24px 'ＭＳ ゴシック'"
+    ctx.fillStyle = "white";
+    ctx.fillText("対局開始", width/2+16, height/2+24);
+}
 //画面全体を描画
 function draw_all(){
     status = 0;   //状態初期化
     draw_out();  //盤外
+    ctx.fillStyle = line_color[0];    //駒台
+    ctx.lineWidth = 3;
+    ctx.strokeRect(psize*mw, psize*mh, psize*(board_w), psize*(board_h)); //枠線
     for(by=0; by<board_h; by++){    //盤内
         for(bx=0; bx<board_w; bx++){
             id = board[by][bx];
@@ -140,10 +157,11 @@ function draw_all(){
         }
     }
     ctx.fillStyle = line_color[0];    //駒台
-    ctx.fillRect(psize*msw, psize*msh, psize*(stand_w), psize*(stand_h));
-    ctx.fillRect(psize*(total_w-stand_w-msw), psize*(total_h-stand_h-msh), psize*(stand_w), psize*(stand_h));
+    ctx.lineWidth = 3;
+    ctx.strokeRect(psize*msw, psize*msh, psize*(stand_w), psize*(stand_h)); //枠線
+    ctx.strokeRect(psize*(total_w-stand_w-msw), psize*(total_h-stand_h-msh), psize*(stand_w), psize*(stand_h));
     ctx.fillStyle = stand_color[0];
-    ctx.fillRect(psize*msw+1, psize*msh+1, psize*(stand_w)-2, psize*(stand_h)-2);
+    ctx.fillRect(psize*msw+1, psize*msh+1, psize*(stand_w)-2, psize*(stand_h)-2);  //枠内
     ctx.fillRect(psize*(total_w-stand_w-msw)+1, psize*(total_h-stand_h-msh)+1, psize*(stand_w)-2, psize*(stand_h)-2);
     set_stand();  //stand配列を更新
     for(sy=stand_h-1; 0<=sy; sy--){
@@ -165,13 +183,13 @@ function draw_all(){
     }
 
     if(winner == 1){
-        ctx.fillStyle = "red";    //手番の表示
+        ctx.fillStyle = "maroon";    //手番の表示
         ctx.fillText("勝利",psize/2,total_h*psize-12);
         ctx.fillStyle = "black";    //手番の表示
         ctx.fillText("敗北",psize/2,psize);
         turn = 0;
     }else if(winner == -1){
-        ctx.fillStyle = "red";    //手番の表示
+        ctx.fillStyle = "maroon";    //手番の表示
         ctx.fillText("勝利",psize/2,psize);
         ctx.fillStyle = "black";    //手番の表示
         ctx.fillText("敗北",psize/2,total_h*psize-12);
@@ -219,8 +237,6 @@ function draw_stand(sx,sy,id,member,color){
         px = (stand_w+msw-sx-1)*psize;
         py = (stand_h+msh-sy-1)*psize;
     }
-    ctx.fillStyle = stand_color[color];
-    ctx.fillRect(px+1, py+1, psize-2, psize-2);  //盤面描画
     if(0<id){   //駒描画
         if(member==1){
             ctx.fillStyle = font_color[0];
@@ -270,6 +286,15 @@ function mousedown(e){
 }
  //クリック(タッチ)された座標にあるマス識別
 function masu_select(tx,ty){
+    if(mode==0){
+        if(width/2<tx && tx<(width/2+psize*4) && height/2<ty && ty<(height/2+psize)){
+            mode=1;
+            init();  //ゲーム開始
+        }else{
+            return;
+        }
+    }
+
     x = Math.floor(tx/psize);   //floor:切り捨て
     y = Math.floor(ty/psize);
     if(isinside(x,y)){
@@ -302,7 +327,7 @@ function masu_select(tx,ty){
             return;
         }
     }
-    draw_all();
+    if(mode!=1) draw_all;
 }
 //移動する駒の指定
 function movefrom(bx,by){
@@ -404,7 +429,6 @@ function setto(bx,by){
     }
     draw_all();
 }
-
 //stand配列を更新
 function set_stand(){
     for(j=0; j<=1; j++){
@@ -439,8 +463,8 @@ function changable(by){
     if((3-3*turn <= by) && (by <= 5 - 3*turn)) return(1);
     return(0);
 }
-
 //リセット(初期化)
 function doReset() {
-    init();
+    mode = 0;
+    draw_top();
 }

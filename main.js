@@ -7,10 +7,12 @@ var stand = [];                //持ち駒(種類と位置)リスト
 var numstand = [];
 var captble = [];              //持ち駒リスト
 
-var mode = 0;      //0:初期 1:CPU???対局, 2:友達???対局, 2:CPU通常対局, 3:友達通常対局
+var mode = 0;      //0:初期 1:CPU???対局, 2:友達???対局, 3:CPU通常対局, 4:友達通常対局
 var status = 0;      //0:通常　1:駒の選択状態
 var turn;     //1:player1　-1:player2
+var bx,by;       //盤上の座標
 var sbx,sby;     //選択状態の駒のbx,by
+var sx,sy;       //駒台上の座標
 var ssx,ssy;     //選択状態の駒のsx,sy
 var winner;   //1:player1勝利　-1:player2勝利
 
@@ -328,15 +330,14 @@ function action1(x,y){    //人間
     }
     draw_all();
 }
-function action2(){   //CPU
-    var a = CPUthink();
-    sbx = a[0];
-    sby = a[1];
-    bx = a[2];
-    by= a[3];
-    CPUmove(sbx,sby,bx,by);
+function action2(){   //CPUの手番
+    CPUthink(CPUmove);
 }
-function CPUmove(sbx,sby,bx,by){
+function CPUmove(){
+    sbx = cpu[0];
+    sby = cpu[1];
+    bx = cpu[2];
+    by= cpu[3];
     setTimeout("movefrom(sbx,sby)",100);
     setTimeout("moveto(bx,by)",200);
     setTimeout("turn *= -1",300);

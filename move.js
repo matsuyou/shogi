@@ -38,14 +38,15 @@ var change = [0,0,0,10,11,0,12,13,14,15,-3,-4,-6,-7,-8,-9];  //成リスト
 ///////////////////////////////////////////動作処理////////////////////////////////////////////////////
 //移動する駒の指定
 function movefrom(bx,by){
-    id = board[by][bx];
-    m = member[by][bx];
+    var id = board[by][bx];
+    var m = member[by][bx];
+    var id2,m2;
     if(id != 0 && m == turn){
         status = 1;
         draw_board(bx,by,id,m,1);  //選択された駒の表示変更
         for(i=0; i<10; i++){
-            tbx = bx;
-            tby = by;
+            var tbx = bx;
+            var tby = by;
             while(movtbl[id][i] > 0){            //移動可能マスを描画
                 tbx += dx[i];
                 tby += dy[i]*turn*(-1);
@@ -63,12 +64,14 @@ function movefrom(bx,by){
 }
 //移動後の座標の指定
 function moveto(bx,by){
-    id = board[sby][sbx];
+    var id = board[sby][sbx];
     if(change[id] > 0){   //成処理
         if((changable(sby)==1) || (changable(by) == 1)){
             if((id==7||id==8||id==9)&&(by==turn*(-4)+4)){   //歩と香が端に来た
                 id = change[id];
             }else if((id==7)&&(by==turn*(-3)+4)){  　 //桂が端2に来た
+                id = change[id];
+            }else if(turn==-1 && (mode==1||mode==3)){
                 id = change[id];
             }else{
                 if(confirm("成りますか？")) id = change[id];
@@ -76,7 +79,7 @@ function moveto(bx,by){
         }
     }
     if(member[by][bx] == turn*(-1)){   //駒取処理
-        getid = board[by][bx];
+        var getid = board[by][bx];
         if(change[getid] < 0)  getid = change[getid]*(-1);
         if(turn==1) numstand[0][getid] += 1;
         if(turn==-1) numstand[1][getid] += 1;
@@ -85,9 +88,12 @@ function moveto(bx,by){
     member[by][bx] = member[sby][sbx];
     board[sby][sbx] = 0;
     member[sby][sbx] = 0;
+    recentx=bx;
+    recenty=by;
 }
 //次に指す持ち駒の指定
 function setfrom(sx,sy){
+    var id,pawn,bx,by;
     if(turn==1){
         id = stand[0][stand_w*sy+sx];
     }else if(turn==-1){
@@ -126,15 +132,18 @@ function setfrom(sx,sy){
 }
 //駒を指す座標の指定
 function setto(bx,by){
+    var id;
     if(turn==1){
-        id = stand[0][stand_w*sy+sx];
+        id = stand[0][stand_w*ssy+ssx];
         numstand[0][id] -= 1;
     }else if(turn == -1){
-        id = stand[1][stand_w*sy+sx];
+        id = stand[1][stand_w*ssy+ssx];
         numstand[1][id] -= 1;
     }
     board[by][bx] = id;
     member[by][bx] = turn;
+    recentx=bx;
+    recenty=by;
 }
 
 ////////////////////////////////////////////////////判定・調整処理/////////////////////////////////////////////

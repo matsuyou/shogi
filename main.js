@@ -12,8 +12,9 @@ var status = 0;      //0:通常　1:駒の選択状態
 var turn;     //1:player1　-1:player2
 var bx,by;       //盤上の座標
 var sbx,sby;     //選択状態の駒のbx,by
-var sx,sy;       //駒台上の座標
+//var sx,sy;       //駒台上の座標
 var ssx,ssy;     //選択状態の駒のsx,sy
+var recentx,recenty
 var winner;   //1:player1勝利　-1:player2勝利
 
 var font_color = ["black","maroon","lime"];    //文字の色
@@ -129,7 +130,11 @@ function draw_all(){
             id = board[by][bx];
             m = member[by][bx];
             movable[by][bx] = 0;
-            draw_board(bx,by,id,m,0);
+            if(bx==recentx&&by==recenty){    //直近に差された駒
+                draw_board(bx,by,id,m,1);
+            }else{
+                draw_board(bx,by,id,m,0);
+            }
         }
     }
     ctx.fillStyle = line_color[0];    //駒台
@@ -163,12 +168,14 @@ function draw_all(){
         ctx.fillText("勝利",psize/2,total_h*psize-12);
         ctx.fillStyle = "black";    //手番の表示
         ctx.fillText("敗北",psize/2,psize);
+        if(mode==1||mode==3) setTimeout("alert('あなたの勝利です！')",100);
         turn = 0;
     }else if(winner == -1){
         ctx.fillStyle = "maroon";    //手番の表示
         ctx.fillText("勝利",psize/2,psize);
         ctx.fillStyle = "black";    //手番の表示
         ctx.fillText("敗北",psize/2,total_h*psize-12);
+        if(mode==1||mode==3) setTimeout("alert('あなたの負けです…')",100);
         turn = 0;
     }
 
@@ -316,15 +323,13 @@ function action1(x,y){    //人間
     }else if(isstand(x,y)){
         if(status==0){
             if(turn==1){
-                sx = x-(total_w-msw-stand_w);
-                sy = y-(total_h-msh-stand_h);
+                ssx = x-(total_w-msw-stand_w);
+                ssy = y-(total_h-msh-stand_h);
             }else if(turn==-1){
-                sx = msw+stand_w-x-1;
-                sy = msh+stand_h-y-1;
+                ssx = msw+stand_w-x-1;
+                ssy = msh+stand_h-y-1;
             }
-            ssx = sx;
-            ssy = sy;
-            setfrom(sx,sy);
+            setfrom(ssx,ssy);
             return;
         }
     }
@@ -334,12 +339,17 @@ function action2(){   //CPUの手番
     CPUthink(CPUmove);
 }
 function CPUmove(){
-    sbx = cpu[0];
-    sby = cpu[1];
-    bx = cpu[2];
-    by= cpu[3];
-    setTimeout("movefrom(sbx,sby)",100);
-    setTimeout("moveto(bx,by)",200);
+    if(cpu[4]==0){
+        sbx = cpu[0];
+        sby = cpu[1];
+        setTimeout("movefrom(sbx,sby)",100);
+        setTimeout("moveto(cpu[2],cpu[3])",200);
+    }else if(cpu[4]==1){
+        ssx = cpu[0];
+        ssy = cpu[1];
+        setTimeout("setfrom(ssx,ssy)",100);
+        setTimeout("setto(cpu[2],cpu[3])",200);
+    }
     setTimeout("turn *= -1",300);
     setTimeout("draw_all()",400);
 }

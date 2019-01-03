@@ -2,14 +2,42 @@
 var cpu;     //CPUの考えた指し手
 var legalMove;  //合法手
 var getMove;  //駒取れる手
+var winMove;  //相手の王取れる手
 
 function CPUthink(callback){
-    var cpu_id,id2,m2;
-    var bx,by,tbx,tby;
+    var id,i;
+    var bx,by,tbx,tby,x,y;
+    var Board, Member;   //一時的な盤面情報
 
-    makeMoves();
+    makeMoves();  //合法手生成
 
-    if(getMove.length>0){  //取れる駒は取る
+    if(winMove.length){
+        cpu = winMove;
+        callback();
+    }else if(takenKing(turn,board,member)){         //王手された
+        i=0;
+        while(i<legalMove.length){     //王手を回避出来る手の中からランダムに選んで選択
+            Board = $.extend(true,[],board);    //配列のディープコピー(jquery)
+            Member = $.extend(true,[],member);
+            cpu = legalMove[i];
+            if(cpu[4]==0){
+                id = Board[cpu[1]][cpu[0]];
+                Board[cpu[1]][cpu[0]] = 0;
+                Member[cpu[1]][cpu[0]] = 0;
+                Board[cpu[3]][cpu[2]] = id;
+                Member[cpu[3]][cpu[2]] = turn;
+            }else if(cpu[4]==1){
+                id = stand[1][stand_w*cpu[1]+cpu[0]];
+                Board[cpu[3]][cpu[2]] = id;
+                Member[cpu[3]][cpu[2]] = turn;
+            }
+            if(i==legalMove.length-1 || takenKing(turn,Board,Member)==0){  //回避手見つかったか最後まで見つからなかったとき
+                callback();
+                break;
+            }
+            i++;
+        }
+    }else if(getMove.length>0){  //取れる駒は取る
         choice=Math.floor(Math.random() * getMove.length);
         if(cpu = getMove[choice]){
             callback();
@@ -21,13 +49,13 @@ function CPUthink(callback){
         }
     }
 }
+
 //合法手を全て追加
 function makeMoves() {
     legalMove = new Array();  //配列の初期化
     getMove = new Array();
-
+    winMove = new Array();
     var bx,by,sx,sy,id;
-
     for(by=0; by<board_h; by++){
         for(bx=0; bx<board_w; bx++){
             if(member[by][bx]==turn){
@@ -62,6 +90,10 @@ function addMove1(x,y){
             }else if(m2 == turn*(-1)){  //敵駒にぶつかる
                 GMove = [x,y,tbx,tby,0];
                 getMove.push(GMove);    //getMove追加
+                if(id2 == OU || id2 == GY){  //相手の王取れる
+                    winMove = GMove;
+                    break;
+                }
             }
             Move = [x,y,tbx,tby,0];
             legalMove.push(Move);    //legalMove追加
@@ -96,4 +128,41 @@ function addMove2(x,y,id){
             }
         }
     }
+}
+
+function takenKing(m,Board,Member){   //王手チェック
+    var bx,by,id;
+    for(by=0; by<board_h; by++){
+        for(bx=0; bx<board_w; bx++){
+            id = Board[by][bx];
+            if((id==OU || id == GY) && Member[by][bx] == m){
+                return takencheck(bx,by,id,m,Board,Member)
+            }
+        }
+    }
+}
+function takencheck(x,y,id,m,Board,Member){   //駒が相手に取られるかどうか
+    var i,count,id2,m2,tbx,tby;
+    var flag = 0;
+    for(i=0; i<10; i++){
+        tbx = x;
+        tby = y;
+        count = 0;
+        while(flag==0){
+            tbx += dx[i];
+            tby += dy[i]*turn*(-1);
+            if(tbx<0 || board_w<=tbx || tby<0 || board_h<=tby) break;  //盤外
+            m2 = Member[tby][tbx];
+            if(m2 == m) break;  //自駒にぶつかる
+            id2 = Board[tby][tbx];
+            if(id2>0 && movtbl[id2][i]>count){
+                flag = 1;
+                break;
+            }
+            if(i==0||i==1) break;  //桂馬
+            count = 1;
+        }
+    }
+    if(flag==0) return(0);
+    if(flag==1) return(1);
 }

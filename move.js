@@ -32,6 +32,16 @@ var movtbl = [
     [0,0,1,1,1,1,1,0,1,0],    //15:と
 ];
 
+var OU = 1;
+var GY = 2;
+var HI = 3;
+var KA = 4;
+var KI = 5;
+var GI = 6;
+var KE = 7;
+var KY = 8;
+var HU = 9;
+
 var change = [0,0,0,10,11,0,12,13,14,15,-3,-4,-6,-7,-8,-9];  //成リスト
 
 
@@ -67,9 +77,9 @@ function moveto(bx,by){
     var id = board[sby][sbx];
     if(change[id] > 0){   //成処理
         if((changable(sby)==1) || (changable(by) == 1)){
-            if((id==7||id==8||id==9)&&(by==turn*(-4)+4)){   //歩と香が端に来た
+            if((id==KE||id==KY||id==HU)&&(by==turn*(-4)+4)){   //歩と香が端に来た
                 id = change[id];
-            }else if((id==7)&&(by==turn*(-3)+4)){  　 //桂が端2に来た
+            }else if((id==KE)&&(by==turn*(-3)+4)){  　 //桂が端2に来た
                 id = change[id];
             }else if(turn==-1 && (mode==1||mode==3)){
                 id = change[id];
@@ -103,7 +113,7 @@ function setfrom(sx,sy){
     status=2;
     draw_stand(sx,sy,id,turn,1);   //置く駒の色変更
     for(bx=0; bx<board_w; bx++){  //置ける場所探索
-        if(id==9){        //歩の場合
+        if(id==HU){        //歩の場合
             pawn = 0;
             for(by=0; by<board_h; by++){
                 if(board[by][bx]==9 && member[by][bx]==turn){
@@ -115,13 +125,13 @@ function setfrom(sx,sy){
         }
         for(by=0; by<board_h; by++){
             if(turn==1){
-                if(id==9 && by==0) continue;   //端に歩置けない
-                if(id==8 && by<1) continue;    //端に香置けない
-                if(id==7 && by<2) continue;    //端に桂置けない
+                if(id==HU && by==0) continue;   //端に歩置けない
+                if(id==KY && by<1) continue;    //端に香置けない
+                if(id==KE && by<2) continue;    //端に桂置けない
             }else if(turn==-1){
-                if(id==9 && by==board_h-1) continue;   //端に歩置けない
-                if(id==8 && by==board_h-1) continue;   //端に歩置けない
-                if(id==7 && board_h-3<by) continue;    //端に桂置けない
+                if(id==HU && by==board_h-1) continue;   //端に歩置けない
+                if(id==KY && by==board_h-1) continue;   //端に香置けない
+                if(id==KE && board_h-3<by) continue;    //端に桂置けない
             }
             if(board[by][bx]==0){
                 draw_board(bx,by,0,0,2);   //盤の色変更

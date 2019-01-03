@@ -1,7 +1,7 @@
 
 var ctx;     //コンテキスト
-var board = [];               //盤の初期配置
-var member = [];               //各駒の初期配属
+var board = [];               //盤の配置
+var member = [];               //各駒の配属
 var movable = [];               //移動可能マス
 var stand = [];                //持ち駒(種類と位置)リスト
 var numstand = [];
@@ -9,7 +9,7 @@ var captble = [];              //持ち駒リスト
 
 var mode = 0;      //0:初期 1:CPU???対局, 2:友達???対局, 3:CPU通常対局, 4:友達通常対局
 var status = 0;      //0:通常　1:駒の選択状態
-var turn;     //1:player1　-1:player2
+var turn;     //1:player1　-1:player2(CPU)
 var bx,by;       //盤上の座標
 var sbx,sby;     //選択状態の駒のbx,by
 //var sx,sy;       //駒台上の座標
@@ -76,6 +76,8 @@ function init() {
     turn = Math.floor(Math.random ()*2)*2 -1;   //手番をランダムで決定
 
     winner = 0;
+    recentx = null;
+    recenty = null;
     draw_all();     //画面全体を描画
 }
 
@@ -191,7 +193,7 @@ function draw_all(){
     }
 }
 //盤内を描画
-function draw_board(bx,by,id,member,color){
+function draw_board(bx,by,id,m,color){
     px = (bx+mw)*psize;
     py = (by+mh)*psize;
     ctx.fillStyle = line_color[color];
@@ -204,9 +206,9 @@ function draw_board(bx,by,id,member,color){
         }else{
             ctx.fillStyle = font_color[1];
         }
-        if(member==1){
+        if(m==1){
             ctx.fillText(nametbl[id],px+4,py+24);
-        }else if(member==-1){
+        }else if(m==-1){
             px = -px-psize;
             py = -py-psize;
             ctx.rotate(Math.PI); //半回転
@@ -216,23 +218,23 @@ function draw_board(bx,by,id,member,color){
     }
 }
 //駒台を描画
-function draw_stand(sx,sy,id,member,color){
-    if(member==1){
+function draw_stand(sx,sy,id,m,color){
+    if(m==1){
         px = (total_w-msw-stand_w+sx)*psize;
         py = (total_h-msh-stand_h+sy)*psize;
-    }else if(member==-1){
+    }else if(m==-1){
         px = (stand_w+msw-sx-1)*psize;
         py = (stand_h+msh-sy-1)*psize;
     }
     ctx.fillStyle = stand_color[color];
     ctx.fillRect(px+1, py+1, psize-2, psize-2);  //盤面描画
     if(0<id){   //駒描画
-        if(member==1){
+        if(m==1){
             ctx.fillStyle = font_color[0];
             ctx.fillText(nametbl[id],px+4,py+24);
             ctx.fillStyle = font_color[2];
             if(numstand[0][id]>1)  ctx.fillText(numstand[0][id],px+18,py+32);
-        }else if(member==-1){
+        }else if(m==-1){
             px = -px-psize;
             py = -py-psize;
             ctx.rotate(Math.PI); //半回転

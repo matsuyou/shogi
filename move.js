@@ -41,6 +41,8 @@ var GI = 6;
 var KE = 7;
 var KY = 8;
 var HU = 9;
+var RY = 10;
+var UM = 11;
 
 var change = [0,0,0,10,11,0,12,13,14,15,-3,-4,-6,-7,-8,-9];  //成リスト
 

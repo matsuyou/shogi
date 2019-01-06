@@ -1,60 +1,63 @@
 //CPU  手の選択
 var cpu;     //CPUの考えた指し手
 var legalMove;  //合法手
-var getMove;  //駒取れる手
 var winMove;  //相手の王取れる手
 
+//0:なし//1:王//2:玉//3:飛//4:角//5:金//6:銀//7:桂//8:香//9:歩//10:竜//11:馬//12:全//13:圭//14:杏//15:と
+var komavalue = [0,200,200,20,18,12,10,8,6,2,24,20,10,10,10,8];  //各駒の評価
+
 function CPUthink(callback){
-    var id,i;
+    var id,id2,i,eval,max_eval,max_num;
     var bx,by,tbx,tby,x,y;
     var Board, Member;   //一時的な盤面情報
+    //var eva = new Array();
 
     makeMoves();  //合法手生成
 
-    if(winMove.length){
-        cpu = winMove;
-        callback();
-    }else if(takenKing(turn,board,member)){         //王手された
-        i=0;
-        while(i<legalMove.length){     //王手を回避出来る手の中からランダムに選んで選択
-            Board = $.extend(true,[],board);    //配列のディープコピー(jquery)
-            Member = $.extend(true,[],member);
-            cpu = legalMove[i];
-            if(cpu[4]==0){
-                id = Board[cpu[1]][cpu[0]];
-                Board[cpu[1]][cpu[0]] = 0;
-                Member[cpu[1]][cpu[0]] = 0;
-                Board[cpu[3]][cpu[2]] = id;
-                Member[cpu[3]][cpu[2]] = turn;
-            }else if(cpu[4]==1){
-                id = stand[1][stand_w*cpu[1]+cpu[0]];
-                Board[cpu[3]][cpu[2]] = id;
-                Member[cpu[3]][cpu[2]] = turn;
+    i = legalMove.length-1;
+    max_eval = 0;
+    max_num = 0;
+    while(1){   //合法手の中から評価値が最も高い手を選択
+        Board = $.extend(true,[],board);    //配列のディープコピー(jquery)
+        Member = $.extend(true,[],member);
+        Numstand = $.extend(true,[],numstand[1]);
+        cpu = legalMove[i];
+        if(cpu[4]==0){
+            id = Board[cpu[1]][cpu[0]];
+            Board[cpu[1]][cpu[0]] = 0;
+            Member[cpu[1]][cpu[0]] = 0;
+            if(Board[cpu[3]][cpu[2]]>0){   //移動先に敵駒
+                id2 = Board[cpu[3]][cpu[2]];
+                if(change[id2]<0)  id2 = change[id2]*(-1);
+                Numstand[id2] += 1;
             }
-            if(i==legalMove.length-1 || takenKing(turn,Board,Member)==0){  //回避手見つかったか最後まで見つからなかったとき
-                callback();
-                break;
-            }
-            i++;
+            Board[cpu[3]][cpu[2]] = id;
+            Member[cpu[3]][cpu[2]] = turn;
+        }else if(cpu[4]==1){
+            id = stand[1][stand_w*cpu[1]+cpu[0]];
+            Board[cpu[3]][cpu[2]] = id;
+            Member[cpu[3]][cpu[2]] = turn;
+            Numstand[id] -= 1;
         }
-    }else if(getMove.length>0){  //取れる駒は取る
-        choice=Math.floor(Math.random() * getMove.length);
-        if(cpu = getMove[choice]){
+        eval = evaluation(Board,Member,Numstand,turn);
+        //eva.push(eval);
+        if(eval > max_eval){
+            max_eval = eval;
+            max_num = i;
+        }
+        if(i==0){
+            //alert(eva);
+            cpu = legalMove[max_num];
             callback();
+            break;
         }
-    }else{   //ランダムに移動
-        var choice = Math.floor(Math.random() * legalMove.length);    //0～choice_num-1までのランダムな整数
-        if(cpu = legalMove[choice]){
-            callback();
-        }
+        i--;
     }
 }
 
 //合法手を全て追加
 function makeMoves() {
     legalMove = new Array();  //配列の初期化
-    getMove = new Array();
-    winMove = new Array();
     var bx,by,sx,sy,id;
     for(by=0; by<board_h; by++){
         for(bx=0; bx<board_w; bx++){
@@ -74,7 +77,7 @@ function makeMoves() {
 //盤上の駒の合法手追加
 function addMove1(x,y){
     var id,i;
-    var Move, GMove;
+    var Move;
     id = board[y][x];
     for(i=0; i<10; i++){
         var tbx = x;
@@ -85,16 +88,7 @@ function addMove1(x,y){
             if(tbx<0 || board_w<=tbx || tby<0 || board_h<=tby) break;  //盤外
             id2 = board[tby][tbx];
             m2 = member[tby][tbx];
-            if(m2 == turn){  //自駒にぶつかる
-                break;
-            }else if(m2 == turn*(-1)){  //敵駒にぶつかる
-                GMove = [x,y,tbx,tby,0];
-                getMove.push(GMove);    //getMove追加
-                if(id2 == OU || id2 == GY){  //相手の王取れる
-                    winMove = GMove;
-                    break;
-                }
-            }
+            if(m2 == turn) break;  //自駒にぶつかる;
             Move = [x,y,tbx,tby,0];
             legalMove.push(Move);    //legalMove追加
             if(movtbl[id][i] == 1) break;  //一マスだけ進める場合
@@ -124,25 +118,36 @@ function addMove2(x,y,id){
             if(board[by][bx]==0){
                 Move = [x,y,bx,by,1];
                 legalMove.push(Move);    //legalMove追加
-
             }
         }
     }
 }
-
-function takenKing(m,Board,Member){   //王手チェック
-    var bx,by,id;
+//盤面の評価値計算
+function evaluation(Board,Member,Numstand,m){
+    var bx,by,id,i;
+    var eval = 0;
     for(by=0; by<board_h; by++){
         for(bx=0; bx<board_w; bx++){
-            id = Board[by][bx];
-            if((id==OU || id == GY) && Member[by][bx] == m){
-                return takencheck(bx,by,id,m,Board,Member)
+            if(Member[by][bx] == m){
+                id = Board[by][bx];
+                if(id == OU || id == GY || id == HI || id == KA || id == UM){
+                    if(takencheck(bx,by,m,Board,Member))  eval -= komavalue[id]-1;    //大事な駒が取られそう
+                }else{
+                    if(takencheck(bx,by,m,Board,Member))  eval -= 1;    //駒が取られそう
+                }
+                eval += komavalue[id];
             }
         }
     }
+    for(i=0;i<Numstand.length;i++){
+        eval += komavalue[i] * Numstand[i];
+    }
+    return eval;
 }
-function takencheck(x,y,id,m,Board,Member){   //駒が相手に取られるかどうか
-    var i,count,id2,m2,tbx,tby;
+
+ //駒が相手に取られるかどうか
+function takencheck(x,y,m,Board,Member){
+    var i,count,id,m2,tbx,tby;
     var flag = 0;
     for(i=0; i<10; i++){
         tbx = x;
@@ -154,9 +159,9 @@ function takencheck(x,y,id,m,Board,Member){   //駒が相手に取られるか�
             if(tbx<0 || board_w<=tbx || tby<0 || board_h<=tby) break;  //盤外
             m2 = Member[tby][tbx];
             if(m2 == m) break;  //自駒にぶつかる
-            id2 = Board[tby][tbx];
-            if(id2>0 && movtbl[id2][i]>count){
-                flag = 1;
+            id = Board[tby][tbx];
+            if(id>0){    //敵駒にぶつかる
+                if(movtbl[id][i]>count) flag = 1;
                 break;
             }
             if(i==0||i==1) break;  //桂馬

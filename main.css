@@ -6,6 +6,9 @@ body {
     -webkit-user-select: none; /* Chrome, Safari, and Opera */
     -webkit-touch-callout: none; /* Disable Android and iOS callouts*/
 
+    overflow: hidden; /*はみ出たら非表示*/
+    touch-action:none;
+
     background: #000000;
     color:#000000;
     margin: 0px;
@@ -16,7 +19,6 @@ body {
     width: 80%;
     margin: 0 auto;
     max-width: 400px;
-    margin-top: 50px;
 }
 
 #world{
@@ -30,7 +32,7 @@ body {
 	float:left;
 	width:70px;
 	height:30px;
-	margin-top:24px;
+	margin-top:12px;
 	text-decoration: underline;
 	color: #ffffff;
 	font-size: 12px;

@@ -25,13 +25,12 @@ var stand_color = ["peru","saddlebrown"];  //駒台の色
 var width = 400;   //画面の横幅
 var height = 640;   //画面の縦幅
 
-var psize = 32;           //1マスのピクセル数
+var psize = 34;           //1マスのピクセル数
 var total_w = 11, total_h = 19;    //画面全体のマス数
 var board_w = 9, board_h = 9;    //将棋盤のサイズ
 var mw = (total_w-board_w)/2,   mh = (total_h-board_h)/2;  //将棋盤周りの余白マス数
 var stand_w = 9, stand_h = 1;    //駒台のサイズ
 var msw = 1, msh = 4;     //駒台周りの余白
-
 
 //初期化処理
 function init() {
@@ -98,6 +97,7 @@ function draw_top(){
          touch=true;
     }
     if(touch==true){
+        document.addEventListener('touchmove', function(e) {e.preventDefault();}, {passive: false});  //スクロール禁止
         document.addEventListener("touchstart", touchstart);  //タッチした瞬間に処理
     }else{
         document.addEventListener("mousedown", mousedown);   //マウス押した瞬間に処理
@@ -106,17 +106,17 @@ function draw_top(){
     draw_out();  //背景描画
     ctx.font = "italic bold 50px 'HG正楷書体-PRO'";
     ctx.fillStyle = font_color[0];
-    ctx.fillText("ほぼ将棋", mw*psize, mh*psize);
+    ctx.fillText("ただの将棋", mw*psize, mh*psize);
     //選択ボタン描画
-    ctx.font = " 24px 'ＭＳ ゴシック'"
+    ctx.font = " 25px 'ＭＳ ゴシック'"
     ctx.fillStyle = "saddlebrown";
-    ctx.fillRect(psize*1, height/2, psize*(total_w-2), psize*1);  //枠内
-    ctx.fillRect(psize*1, height/2+psize*2, psize*(total_w-2), psize*1);  //枠内
+    //ctx.fillRect(psize*1, height/2, psize*(total_w-2), psize*1);  //枠内
+    //ctx.fillRect(psize*1, height/2+psize*2, psize*(total_w-2), psize*1);  //枠内
     ctx.fillRect(psize*1, height/2+psize*4, psize*(total_w-2), psize*1);  //枠内
     ctx.fillRect(psize*1, height/2+psize*6, psize*(total_w-2), psize*1);  //枠内
     ctx.fillStyle = "snow";
-    ctx.fillText("???対局(CPU)", psize*3+12, height/2+24);
-    ctx.fillText("???対局(友達)", psize*3+10, height/2+psize*2+24);
+    //ctx.fillText("???対局(CPU)", psize*3+12, height/2+24);
+    //ctx.fillText("???対局(友達)", psize*3+10, height/2+psize*2+24);
     ctx.fillText("通常対局(CPU)", psize*3+10, height/2+psize*4+24);
     ctx.fillText("通常対局(友達)", psize*3+4, height/2+psize*6+24);
 }
@@ -207,12 +207,12 @@ function draw_board(bx,by,id,m,color){
             ctx.fillStyle = font_color[1];
         }
         if(m==1){
-            ctx.fillText(nametbl[id],px+4,py+24);
+            ctx.fillText(nametbl[id],px+5,py+26);
         }else if(m==-1){
             px = -px-psize;
             py = -py-psize;
             ctx.rotate(Math.PI); //半回転
-            ctx.fillText(nametbl[id],px+4,py+24);
+            ctx.fillText(nametbl[id],px+5,py+26);
             ctx.rotate(Math.PI); //半回転
         }
     }
@@ -231,7 +231,7 @@ function draw_stand(sx,sy,id,m,color){
     if(0<id){   //駒描画
         if(m==1){
             ctx.fillStyle = font_color[0];
-            ctx.fillText(nametbl[id],px+4,py+24);
+            ctx.fillText(nametbl[id],px+5,py+26);
             ctx.fillStyle = font_color[2];
             if(numstand[0][id]>1)  ctx.fillText(numstand[0][id],px+18,py+32);
         }else if(m==-1){
@@ -239,7 +239,7 @@ function draw_stand(sx,sy,id,m,color){
             py = -py-psize;
             ctx.rotate(Math.PI); //半回転
             ctx.fillStyle = font_color[0];
-            ctx.fillText(nametbl[id],px+4,py+24);
+            ctx.fillText(nametbl[id],px+5,py+26);
             ctx.rotate(Math.PI); //半回転
             px *= (-1);
             py *= (-1);
@@ -257,16 +257,22 @@ function draw_out(x,y,color){
 }
 
 ///////////////////////////////////////////動作処理////////////////////////////////////////////////////
-//クリック処理(タブレット)
+//タッチ処理(タブレット)
 function touchstart(e){
     if (e.targetTouches.length == 1){
         var rect=e.target.getBoundingClientRect();  //canvas上の絶対座標(左上)
-        touch = e.targetTouches[0];
-        var tx = touch.pageX - rect.left;
-        var ty = touch.pageY - rect.top;
+        var touch = e.targetTouches[0];
+        var tx = touch.clientX - rect.left;
+        var ty = touch.clientY - rect.top;
+        var obj = document.getElementById("world");
+        var rw = obj.getBoundingClientRect().width;    //現在のcanvasサイズ
+        var rh = obj.getBoundingClientRect().height;
+        tx = tx * width / rw;
+        ty = ty * height / rh;
         masu_select(tx, ty);
     }
 }
+
 //クリック処理(PC)
 function mousedown(e){
     var rect=e.target.getBoundingClientRect();  //canvas上の絶対座標(左上)
@@ -278,11 +284,11 @@ function mousedown(e){
 function masu_select(tx,ty){
     if(mode==0){
         if(psize*1<tx && tx<psize*(total_w-2) && height/2<ty && ty<(height/2+psize)){
-            mode=1;  //???CPU通常対局
-            init();  //ゲーム開始
+            //mode=1;  //???CPU通常対局
+            //init();  //ゲーム開始
         }else if(psize*1<tx && tx<psize*(total_w-2) && height/2+psize*2<ty && ty<(height/2+psize*3)){
-            mode=2;  //???通常対局
-            init();  //ゲーム開始
+            //mode=2;  //???通常対局
+            //init();  //ゲーム開始
         }else if(psize*1<tx && tx<psize*(total_w-2) && height/2+psize*4<ty && ty<(height/2+psize*5)){
             mode=3;  //CPU通常対局
             init();  //ゲーム開始
@@ -292,6 +298,7 @@ function masu_select(tx,ty){
         }else{
             return;
         }
+        return;
     }
     x = Math.floor(tx/psize);   //floor:切り捨て
     y = Math.floor(ty/psize);
@@ -361,3 +368,12 @@ function doReset() {
     mode = 0;
     draw_top();
 }
+
+var t = 0;
+document.documentElement.addEventListener('touchend', function (e) {
+  var now = new Date().getTime();
+  if ((now - t) < 500){
+    e.preventDefault();
+  }
+  t = now;
+}, false);

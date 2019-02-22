@@ -22,19 +22,19 @@ var out_color = "olive";   //背景の色
 var board_color = ["Khaki","darkkhaki","steelblue"];  //盤面の色
 var line_color = ["darkslategray" ,"darkslategray" ,"darkslategray"];   //線の色
 var stand_color = ["peru","saddlebrown"];  //駒台の色
-var width = 400;   //画面の横幅
-var height = 640;   //画面の縦幅
+var width = 440;   //画面の横幅
+var height = 600;   //画面の縦幅
 
-var psize = 34;           //1マスのピクセル数
-var total_w = 11, total_h = 19;    //画面全体のマス数
+var psize = 40;           //1マスのピクセル数
+var total_w = 11, total_h = 15;    //画面全体のマス数
 var board_w = 9, board_h = 9;    //将棋盤のサイズ
 var mw = (total_w-board_w)/2,   mh = (total_h-board_h)/2;  //将棋盤周りの余白マス数
 var stand_w = 9, stand_h = 1;    //駒台のサイズ
-var msw = 1, msh = 4;     //駒台周りの余白
+var msw = 1, msh = 2;     //駒台周りの余白
 
 //初期化処理
 function init() {
-    ctx.font = " 24px 'ＭＳ ゴシック'"
+    ctx.font = " 30px 'ＭＳ ゴシック'"
     board = [               //盤の初期配置
         [8,7,6,5,2,5,6,7,8],
         [0,3,0,0,0,0,0,4,0],
@@ -108,18 +108,20 @@ function draw_top(){
     ctx.fillStyle = font_color[0];
     ctx.fillText("ただの将棋", mw*psize, mh*psize);
     //選択ボタン描画
-    ctx.font = " 25px 'ＭＳ ゴシック'"
+    ctx.font = " 26px 'ＭＳ ゴシック'"
     ctx.fillStyle = "saddlebrown";
-    //ctx.fillRect(psize*1, height/2, psize*(total_w-2), psize*1);  //枠内
-    //ctx.fillRect(psize*1, height/2+psize*2, psize*(total_w-2), psize*1);  //枠内
-    ctx.fillRect(psize*1, height/2+psize*4, psize*(total_w-2), psize*1);  //枠内
-    ctx.fillRect(psize*1, height/2+psize*6, psize*(total_w-2), psize*1);  //枠内
+    ctx.fillRect(psize*1, height/2+psize*3, psize*(total_w-2), psize*1);  //枠内
+    ctx.fillRect(psize*1, height/2+psize*5, psize*(total_w-2), psize*1);  //枠内
     ctx.fillStyle = "snow";
-    //ctx.fillText("???対局(CPU)", psize*3+12, height/2+24);
-    //ctx.fillText("???対局(友達)", psize*3+10, height/2+psize*2+24);
-    ctx.fillText("通常対局(CPU)", psize*3+10, height/2+psize*4+24);
-    ctx.fillText("通常対局(友達)", psize*3+4, height/2+psize*6+24);
+    ctx.fillText("通常対局(ぼっち)", psize*3+4, height/2+psize*3+30);
+    ctx.fillText("通常対局(友達)", psize*3+18, height/2+psize*5+30);
+    var img = new Image();
+    img.onload = function onImageLoad() {
+        ctx.drawImage(img, width/2-100, height/2-100, 200, 200);
+    }
+    img.src = "img/top.png";
 }
+
 //画面全体を描画
 function draw_all(){
     status = 0;   //状態初期化
@@ -207,12 +209,12 @@ function draw_board(bx,by,id,m,color){
             ctx.fillStyle = font_color[1];
         }
         if(m==1){
-            ctx.fillText(nametbl[id],px+5,py+26);
+            ctx.fillText(nametbl[id],px+5,py+32);
         }else if(m==-1){
             px = -px-psize;
             py = -py-psize;
             ctx.rotate(Math.PI); //半回転
-            ctx.fillText(nametbl[id],px+5,py+26);
+            ctx.fillText(nametbl[id],px+5,py+32);
             ctx.rotate(Math.PI); //半回転
         }
     }
@@ -231,15 +233,15 @@ function draw_stand(sx,sy,id,m,color){
     if(0<id){   //駒描画
         if(m==1){
             ctx.fillStyle = font_color[0];
-            ctx.fillText(nametbl[id],px+5,py+26);
+            ctx.fillText(nametbl[id],px+5,py+32);
             ctx.fillStyle = font_color[2];
-            if(numstand[0][id]>1)  ctx.fillText(numstand[0][id],px+18,py+32);
+            if(numstand[0][id]>1)  ctx.fillText(numstand[0][id],px+20,py+26);
         }else if(m==-1){
             px = -px-psize;
             py = -py-psize;
             ctx.rotate(Math.PI); //半回転
             ctx.fillStyle = font_color[0];
-            ctx.fillText(nametbl[id],px+5,py+26);
+            ctx.fillText(nametbl[id],px+5,py+32);
             ctx.rotate(Math.PI); //半回転
             px *= (-1);
             py *= (-1);
@@ -289,10 +291,10 @@ function masu_select(tx,ty){
         }else if(psize*1<tx && tx<psize*(total_w-2) && height/2+psize*2<ty && ty<(height/2+psize*3)){
             //mode=2;  //???通常対局
             //init();  //ゲーム開始
-        }else if(psize*1<tx && tx<psize*(total_w-2) && height/2+psize*4<ty && ty<(height/2+psize*5)){
+        }else if(psize*1<tx && tx<psize*(total_w-2) && height/2+psize*3<ty && ty<(height/2+psize*5)){
             mode=3;  //CPU通常対局
             init();  //ゲーム開始
-        }else if(psize*1<tx && tx<psize*(total_w-2) && height/2+psize*6<ty && ty<(height/2+psize*7)){
+        }else if(psize*1<tx && tx<psize*(total_w-2) && height/2+psize*5<ty && ty<(height/2+psize*7)){
             mode=4;  //友達通常対局
             init();  //ゲーム開始
         }else{
@@ -347,6 +349,7 @@ function action1(x,y){    //人間
 function action2(){   //CPUの手番
     CPUthink(CPUmove);
 }
+//動作処理
 function CPUmove(){
     if(cpu[4]==0){
         sbx = cpu[0];
@@ -369,6 +372,7 @@ function doReset() {
     draw_top();
 }
 
+//ダブルタップによるズーム禁止
 var t = 0;
 document.documentElement.addEventListener('touchend', function (e) {
   var now = new Date().getTime();

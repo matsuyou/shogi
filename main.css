@@ -16,9 +16,9 @@ body {
 }
 
 #gamecontent{
-    width: 80%;
+    width: 95%;
     margin: 0 auto;
-    max-width: 400px;
+    max-width: 440px;
 }
 
 #world{

@@ -2,9 +2,10 @@
 var cpu;     //CPUの考えた指し手
 var legalMove;  //合法手
 var winMove;  //相手の王取れる手
+var total_myturn = 0;   //自分が何手目か
 
 //0:なし//1:王//2:玉//3:飛//4:角//5:金//6:銀//7:桂//8:香//9:歩//10:竜//11:馬//12:全//13:圭//14:杏//15:と
-var komavalue = [0,200,200,20,18,12,10,8,6,2,24,20,10,10,10,8];  //各駒の評価
+var komavalue = [0,200,200,40,36,24,20,16,12,4,48,40,20,20,20,16];  //各駒の評価
 
 function CPUthink(callback){
     var id,id2,i,eval,max_eval,max_num;
@@ -40,19 +41,19 @@ function CPUthink(callback){
             Numstand[id] -= 1;
         }
         eval = evaluation(Board,Member,Numstand,turn);
-        //eva.push(eval);
+
         if(eval > max_eval){
             max_eval = eval;
             max_num = i;
         }
         if(i==0){
-            //alert(eva);
             cpu = legalMove[max_num];
             callback();
             break;
         }
         i--;
     }
+    //alert(max_eval);
 }
 
 //合法手を全て追加
@@ -124,18 +125,38 @@ function addMove2(x,y,id){
 }
 //盤面の評価値計算
 function evaluation(Board,Member,Numstand,m){
-    var bx,by,id,i;
+    var bx,by,id,i,id2;
     var eval = 0;
     for(by=0; by<board_h; by++){
         for(bx=0; bx<board_w; bx++){
             if(Member[by][bx] == m){
                 id = Board[by][bx];
-                if(id == OU || id == GY || id == HI || id == KA || id == UM){
-                    if(takencheck(bx,by,m,Board,Member))  eval -= komavalue[id]-1;    //大事な駒が取られそう
+                if(id == OU || id == GY){
+                    if(takencheck(bx,by,m,Board,Member))  eval -= komavalue[id]-1;    //王が取られそう
                 }else{
-                    if(takencheck(bx,by,m,Board,Member))  eval -= 1;    //駒が取られそう
+                    if(id2 = takencheck(bx,by,m,Board,Member)){                      //大事な駒が取られそう
+                        if(ukicheck(bx,by,m,Board,Member) == 0){       //浮いてる
+                            eval -= komavalue[id]-1;
+                        }else if(komavalue[id2] < komavalue[id]){                  //浮いてない、自分より弱い駒にとられそう
+                            eval -= (komavalue[id] - komavalue[id2]);
+                        }else {                                                    //浮いてない、自分より強い駒にとられそう
+                            eval -= 1;
+                        }
+                    }
                 }
                 eval += komavalue[id];
+            }else if(Member[by][bx] == m*(-1)){
+                id = Board[by][bx];
+                if(id2 = takencheck(bx,by,m*(-1),Board,Member)){          //駒が取れそう
+                    if(ukicheck(bx,by,m*(-1),Board,Member) == 0){      //浮いてる
+                        eval += 2;
+                        //TODO 自分浮いてるか
+                    }else if(komavalue[id2] < komavalue[id]){            //浮いてない、自分より強い駒にとれそう
+                        eval += 1;
+                    }else{                                              //浮いてない、自分より弱い駒にとれそう
+                        eval += 0;
+                    }
+                }
             }
         }
     }
@@ -147,7 +168,7 @@ function evaluation(Board,Member,Numstand,m){
 
  //駒が相手に取られるかどうか
 function takencheck(x,y,m,Board,Member){
-    var i,count,id,m2,tbx,tby;
+    var i,count,id=0,m2,tbx,tby;
     var flag = 0;
     for(i=0; i<10; i++){
         tbx = x;
@@ -155,19 +176,44 @@ function takencheck(x,y,m,Board,Member){
         count = 0;
         while(flag==0){
             tbx += dx[i];
-            tby += dy[i]*turn*(-1);
+            tby += dy[i]*m*(-1);
             if(tbx<0 || board_w<=tbx || tby<0 || board_h<=tby) break;  //盤外
             m2 = Member[tby][tbx];
             if(m2 == m) break;  //自駒にぶつかる
             id = Board[tby][tbx];
             if(id>0){    //敵駒にぶつかる
-                if(movtbl[id][i]>count) flag = 1;
+                if(movtbl[id][i]>count) flag = id;
                 break;
             }
             if(i==0||i==1) break;  //桂馬
             count = 1;
         }
     }
-    if(flag==0) return(0);
-    if(flag==1) return(1);
+    return flag;
+}
+
+//駒が浮き駒かどうか
+function ukicheck(x,y,m,Board,Member){
+    var i,count,id,m2,tbx,tby;
+    var flag = 0;
+    for(i=0; i<10; i++){
+        tbx = x;
+        tby = y;
+        count = 0;
+        while(flag==0){
+            tbx -= dx[i];
+            tby -= dy[i]*m*(-1);
+            if(tbx<0 || board_w<=tbx || tby<0 || board_h<=tby) break;  //盤外
+            m2 = Member[tby][tbx];
+            if(m2 == m*(-1)) break;  //相手駒にぶつかる
+            id = Board[tby][tbx];
+            if(id>0){    //自駒にぶつかる
+                if(movtbl[id][i]>count) flag = id;
+                break;
+            }
+            if(i==0||i==1) break;  //桂馬
+            count = 1;
+        }
+    }
+    return flag;
 }

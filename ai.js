@@ -2,16 +2,41 @@
 var cpu;     //CPUの考えた指し手
 var legalMove;  //合法手
 var winMove;  //相手の王取れる手
-var total_myturn = 0;   //自分が何手目か
+var zyouseki_turn = 0;
+var zyouseki_mode = 1;
 
 //0:なし//1:王//2:玉//3:飛//4:角//5:金//6:銀//7:桂//8:香//9:歩//10:竜//11:馬//12:全//13:圭//14:杏//15:と
-var komavalue = [0,200,200,40,36,24,20,16,12,4,48,40,20,20,20,16];  //各駒の評価
+var komavalue = [0,200,200,40,38,20,20,12,12,4,48,40,20,18,18,16];  //各駒の評価
+
+var zyouseki1 = [[6,2,6,3,0],
+                 [5,2,5,3,0],
+                 [7,1,6,2,0],
+                 [1,1,5,1,0],
+                 [4,0,3,1,0],
+                 [5,0,4,1,0],
+                 [3,1,2,1,0],
+                 [2,1,1,1,0],
+                 [6,0,6,1,0],
+                 [2,0,2,1,0]];
+
+var zyouseki2 = [[6,2,6,3,0],
+                 [6,0,6,1,0],
+                 [6,1,6,2,0],
+                 [4,0,5,1,0],
+                 [2,0,3,1,0],
+                 [5,1,6,1,0],
+                 [5,0,5,1,0],
+                 [3,0,4,0,0],
+                 [1,2,1,3,0],
+                 [1,3,1,4,0]
+                ];
+
+
 
 function CPUthink(callback){
     var id,id2,i,eval,max_eval,max_num;
     var bx,by,tbx,tby,x,y;
     var Board, Member;   //一時的な盤面情報
-    //var eva = new Array();
 
     makeMoves();  //合法手生成
 
@@ -40,16 +65,34 @@ function CPUthink(callback){
             Member[cpu[3]][cpu[2]] = turn;
             Numstand[id] -= 1;
         }
-        eval = evaluation(Board,Member,Numstand,turn);
+        if(zyouseki_mode){
+            eval = evaluation(Board,Member,Numstand,turn);
+        }else{
+            eval = evaluation(Board,Member,Numstand,turn) + Math.floor(Math.random ()*2)*2;
+        }
 
         if(eval > max_eval){
             max_eval = eval;
             max_num = i;
         }
         if(i==0){
-            cpu = legalMove[max_num];
-            callback();
-            break;
+            if(max_eval <= 0){
+                alert("負けました");
+                winner=1
+                setTimeout("draw_all()",200);
+            }else{
+                if(zyouseki_mode && zyouseki_turn<=9 && (max_eval == 442 || max_eval == 440)){
+                    if(zyouseki_mode==1) cpu = zyouseki1[zyouseki_turn];   //CPU先手なら振り飛車
+                    if(zyouseki_mode==3) cpu = zyouseki2[zyouseki_turn];   //cpu後手なら居飛車
+                    zyouseki_turn += 1;
+                    callback();
+                }else{
+                    zyouseki_mode = 0;
+                    cpu = legalMove[max_num];
+                    callback();
+                }
+                break;
+            }
         }
         i--;
     }
@@ -127,41 +170,43 @@ function addMove2(x,y,id){
 function evaluation(Board,Member,Numstand,m){
     var bx,by,id,i,id2;
     var eval = 0;
+    for(i=0;i<Numstand.length;i++){        //駒台
+        eval += (komavalue[i]-1) * Numstand[i];
+    }
     for(by=0; by<board_h; by++){
         for(bx=0; bx<board_w; bx++){
-            if(Member[by][bx] == m){
+            if(Member[by][bx] == m){   //自分の駒
                 id = Board[by][bx];
                 if(id == OU || id == GY){
-                    if(takencheck(bx,by,m,Board,Member))  eval -= komavalue[id]-1;    //王が取られそう
+                    if(takencheck(bx,by,m,Board,Member))  eval -= 1000;    //王が取られそう
                 }else{
-                    if(id2 = takencheck(bx,by,m,Board,Member)){                      //大事な駒が取られそう
+                    if(id2 = takencheck(bx,by,m,Board,Member)){                      //駒が取られそう
                         if(ukicheck(bx,by,m,Board,Member) == 0){       //浮いてる
                             eval -= komavalue[id]-1;
                         }else if(komavalue[id2] < komavalue[id]){                  //浮いてない、自分より弱い駒にとられそう
                             eval -= (komavalue[id] - komavalue[id2]);
                         }else {                                                    //浮いてない、自分より強い駒にとられそう
-                            eval -= 1;
+                            eval -= 2;
                         }
                     }
                 }
                 eval += komavalue[id];
-            }else if(Member[by][bx] == m*(-1)){
+            }else if(Member[by][bx] == m*(-1)){  //相手の駒
                 id = Board[by][bx];
                 if(id2 = takencheck(bx,by,m*(-1),Board,Member)){          //駒が取れそう
+                    if(id == OU || id == GY)  eval += 3;
                     if(ukicheck(bx,by,m*(-1),Board,Member) == 0){      //浮いてる
                         eval += 2;
                         //TODO 自分浮いてるか
                     }else if(komavalue[id2] < komavalue[id]){            //浮いてない、自分より強い駒にとれそう
                         eval += 1;
-                    }else{                                              //浮いてない、自分より弱い駒にとれそう
-                        eval += 0;
                     }
                 }
             }
         }
-    }
-    for(i=0;i<Numstand.length;i++){
-        eval += komavalue[i] * Numstand[i];
+        if(by==board_h-1 && bx==board_w-1){
+            return eval;
+        }
     }
     return eval;
 }

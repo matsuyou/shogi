@@ -12,7 +12,6 @@ var status = 0;      //0:通常　1:駒の選択状態
 var turn;     //1:player1　-1:player2(CPU)
 var bx,by;       //盤上の座標
 var sbx,sby;     //選択状態の駒のbx,by
-//var sx,sy;       //駒台上の座標
 var ssx,ssy;     //選択状態の駒のsx,sy
 var recentx,recenty
 var winner;   //1:player1勝利　-1:player2勝利
@@ -73,10 +72,11 @@ function init() {
     numstand = [[0,0,0,0,0,0,0,0,0,0],        //持ち駒(格納位置:駒id、値:個数)
                 [0,0,0,0,0,0,0,0,0,0]];
     turn = Math.floor(Math.random ()*2)*2 -1;   //手番をランダムで決定
-
     winner = 0;
     recentx = null;
     recenty = null;
+    zyouseki_turn = 0;
+    zyouseki_mode = turn + 2;
     draw_all();     //画面全体を描画
 }
 
@@ -274,7 +274,6 @@ function touchstart(e){
         masu_select(tx, ty);
     }
 }
-
 //クリック処理(PC)
 function mousedown(e){
     var rect=e.target.getBoundingClientRect();  //canvas上の絶対座標(左上)
